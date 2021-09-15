@@ -1,8 +1,11 @@
-import gulp from "gulp";
+import gulp, { dest } from "gulp";
 import gulpSass from "gulp-sass";
 import nodeSass from "node-sass";
-import autoPrefixer from "gulp-autoprefixer";
+import autoprefixer from "gulp-autoprefixer";
 import minifyCSS from "gulp-csso";
+import del from "del";
+import browserify from "gulp-browserify";
+import babel from "babelify";
 
 const sass = gulpSass(nodeSass);
 
@@ -11,27 +14,48 @@ const paths = {
     src: "assets/scss/styles.scss",
     dest: "src/static/styles",
     watch: "assets/scss/**/*.scss"
+  },
+  js: {
+    src: "assets/js/main.js",
+    dest: "src/static/js",
+    watch: "assets/js/**/*.js"
   }
 };
 
-export function styles() {
-  return gulp
+const clean = () => del(["src/static"]); 
+
+const styles = () =>
+  gulp
     .src(paths.styles.src)
     .pipe(sass())
     .pipe(
-      autoPrefixer({
+      autoprefixer({
         browsers: ["last 2 versions"],
         cascade: false
       })
     )
     .pipe(minifyCSS())
     .pipe(gulp.dest(paths.styles.dest));
-    }
-    
-    function watchFiles() {
-      gulp.watch(paths.styles.watch, styles);
-    }
 
-    const dev = gulp.series([styles,watchFiles]);
+    const js = () => 
+    gulp
+      .src(paths.js.src)
+      .pipe(browserify({
+        transform: [
+          babel.configure({
+            presets: ["@babel/preset-env"]
+          })
+        ]
+      }
+
+      ))
+      .pipe(gulp.dest(paths.js.dest));
+
+    const watchFiles = () => {
+     gulp.watch(paths.styles.watch, styles);
+     gulp.watch(paths.js.watch, js);
+    };
+
+    const dev = gulp.series(clean, styles, js, watchFiles);
 
     export default dev;
