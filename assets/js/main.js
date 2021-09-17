@@ -1,3 +1,6 @@
-import "./login"
+import "./socket";
+import "./login";
+import "./chat";
 
-console.log(window.socket);
+
+
