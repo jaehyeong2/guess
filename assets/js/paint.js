@@ -20,25 +20,30 @@ ctx.lineWidth = 2.5;
 let painting = false;
 let filling = false;
 
-function stopPainting() {
-  painting = false;
-}
+const stopPainting = () => {
+    painting = false;
+};
 
-function startPainting() {
-  painting = true;
-}
+const startPainting = () => {
+    painting = true;      
+};
 
 const beginPath = (x, y) => {
   ctx.beginPath();
   ctx.moveTo(x, y);
 };
 
-const strokePath = (x, y) => {
-  ctx.lineTo(x, y);
-  ctx.stroke();
+const strokePath = (x, y, color = null) => {
+    let currentColor = ctx.strokeStyle;
+    if (color !== null) {
+      ctx.strokeStyle = color;
+    }
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.strokeStyle = currentColor;
 };
 
-function onMouseMove(event) {
+const onMouseMove= event => {
   const x = event.offsetX;
   const y = event.offsetY;
   if (!painting) {
@@ -46,17 +51,35 @@ function onMouseMove(event) {
     getSocket().emit(window.events.beginPath, { x, y });
   } else {
     strokePath(x, y);
-    getSocket().emit(window.events.strokePath, { x, y });
+    getSocket().emit(window.events.strokePath, {
+        x,
+        y,
+        color: ctx.strokeStyle
+      });
   }
-}
+};
 
-function handleColorClick(event) {
-  const color = event.target.style.backgroundColor;
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-}
+const handleColorClick= event => {
+    if (filling === true) {
+        filling = false;
+        mode.innerText = "Fill";
+      } else {
+        filling = true;
+        mode.innerText = "Paint";
+      }
+};
 
-function handleModeClick() {
+const fill = (color = null) => {
+    let currentColor = ctx.fillStyle;
+    if (color !== null) {
+      ctx.fillStyle = color;
+    }
+    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    ctx.fillStyle = currentColor;
+  };
+
+
+const handleModeClick= () => {
   if (filling === true) {
     filling = false;
     mode.innerText = "Fill";
@@ -64,17 +87,18 @@ function handleModeClick() {
     filling = true;
     mode.innerText = "Paint";
   }
-}
+};
 
-function handleCanvasClick() {
-  if (filling) {
-    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-  }
-}
+const handleCanvasClick = () => {
+    if (filling) {
+      fill();
+      getSocket().emit(window.events.fill, { color: ctx.fillStyle });
+    }
+  };
 
-function handleCM(event) {
-  event.preventDefault();
-}
+const handleCM = event => {
+    event.preventDefault();
+};
 
 if (canvas) {
   canvas.addEventListener("mousemove", onMouseMove);
